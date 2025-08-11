@@ -150,14 +150,16 @@ export const App = () => {
                   <i className="fas fa-search" aria-hidden="true" />
                 </span>
 
-                <span className="icon is-right">
-                  <button
-                    data-cy="ClearButton"
-                    type="button"
-                    className="delete"
-                    onClick={() => setSearchTerm('')}
-                  />
-                </span>
+                {searchTerm.length > 0 && (
+                  <span className="icon is-right">
+                    <button
+                      data-cy="ClearButton"
+                      type="button"
+                      className="delete"
+                      onClick={() => setSearchTerm('')}
+                    />
+                  </span>
+                )}
               </p>
             </div>
 
@@ -165,7 +167,7 @@ export const App = () => {
               <a
                 href="#/"
                 data-cy="AllCategories"
-                className={`button mr-6 is-outlined ${selectedCategoryIds.length === 0 ? 'is-success' : ''}`}
+                className={`button mr-6 is-success ${selectedCategoryIds.length > 0 ? 'is-outlined' : ''}`}
                 onClick={(e) => { e.preventDefault(); setSelectedCategoryIds([]); }}
               >
                 All
