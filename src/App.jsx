@@ -7,8 +7,8 @@ import categoriesFromServer from './api/categories';
 import productsFromServer from './api/products';
 
 export const App = () => {
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-  const [selectedUserId, setSelectedUserId] = useState(2);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   const [sortColumn, setSortColumn] = useState('id');
@@ -22,8 +22,8 @@ export const App = () => {
 
   let visibleProducts = products.slice();
 
-  if (selectedCategoryId !== null) {
-    visibleProducts = visibleProducts.filter(p => p.category && p.category.id === selectedCategoryId);
+  if (selectedCategoryIds.length > 0) {
+    visibleProducts = visibleProducts.filter(p => p.category && selectedCategoryIds.includes(p.category.id));
   }
 
   if (selectedUserId !== null) {
@@ -89,7 +89,7 @@ export const App = () => {
 
   const resetAll = (e) => {
     e.preventDefault();
-    setSelectedCategoryId(null);
+    setSelectedCategoryIds([]);
     setSelectedUserId(null);
     setSearchTerm('');
     setSortColumn('id');
@@ -121,6 +121,7 @@ export const App = () => {
               >
                 All
               </a>
+
               {usersFromServer.map(user => (
                 <a
                   key={user.id}
@@ -164,8 +165,8 @@ export const App = () => {
               <a
                 href="#/"
                 data-cy="AllCategories"
-                className={`button mr-6 is-outlined ${selectedCategoryId === null ? 'is-success' : ''}`}
-                onClick={(e) => { e.preventDefault(); setSelectedCategoryId(null); }}
+                className={`button mr-6 is-outlined ${selectedCategoryIds.length === 0 ? 'is-success' : ''}`}
+                onClick={(e) => { e.preventDefault(); setSelectedCategoryIds([]); }}
               >
                 All
               </a>
@@ -174,9 +175,16 @@ export const App = () => {
                 <a
                   key={category.id}
                   data-cy="Category"
-                  className={`button mr-2 my-1 ${selectedCategoryId === category.id ? 'is-info' : ''}`}
+                  className={`button mr-2 my-1 ${selectedCategoryIds.includes(category.id) ? 'is-info' : ''}`}
                   href="#/"
-                  onClick={(e) => { e.preventDefault(); setSelectedCategoryId(category.id); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (selectedCategoryIds.includes(category.id)) {
+                      setSelectedCategoryIds(selectedCategoryIds.filter(id => id !== category.id));
+                    } else {
+                      setSelectedCategoryIds([...selectedCategoryIds, category.id]);
+                    }
+                  }}
                 >
                   {category.icon} - {category.title}
                 </a>
