@@ -11,41 +11,96 @@ export const App = () => {
   const [selectedUserId, setSelectedUserId] = useState(2);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const products = productsFromServer.map(product => {
-    const category =
-      categoriesFromServer.find(c => c.id === product.categoryId) || {};
-    const user = usersFromServer.find(u => u.id === category.ownerId) || {};
+  const [sortColumn, setSortColumn] = useState('id');
+  const [sortDirection, setSortDirection] = useState('asc');
 
+  const products = productsFromServer.map(product => {
+    const category = categoriesFromServer.find(c => c.id === product.categoryId) || {};
+    const user = usersFromServer.find(u => u.id === category.ownerId) || {};
     return { ...product, category, user };
   });
 
   let visibleProducts = products.slice();
 
   if (selectedCategoryId !== null) {
-    visibleProducts = visibleProducts.filter(
-      p => p.category && p.category.id === selectedCategoryId,
-    );
+    visibleProducts = visibleProducts.filter(p => p.category && p.category.id === selectedCategoryId);
   }
 
   if (selectedUserId !== null) {
-    visibleProducts = visibleProducts.filter(
-      p => p.user && p.user.id === selectedUserId,
-    );
+    visibleProducts = visibleProducts.filter(p => p.user && p.user.id === selectedUserId);
   }
 
   if (searchTerm.trim() !== '') {
     const q = searchTerm.trim().toLowerCase();
-
-    visibleProducts = visibleProducts.filter(p =>
-      p.name.toLowerCase().includes(q),
-    );
+    visibleProducts = visibleProducts.filter(p => p.name.toLowerCase().includes(q));
   }
 
-  const resetAll = e => {
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortDirection('none');
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  if (sortDirection !== 'none') {
+    visibleProducts.sort((a, b) => {
+      const direction = sortDirection === 'asc' ? 1 : -1;
+      let aValue;
+      let bValue;
+
+      switch (sortColumn) {
+        case 'id':
+          aValue = a.id;
+          bValue = b.id;
+          break;
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'category':
+          aValue = a.category.title.toLowerCase();
+          bValue = b.category.title.toLowerCase();
+          break;
+        case 'user':
+          aValue = a.user.name.toLowerCase();
+          bValue = b.user.name.toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) {
+        return -1 * direction;
+      }
+      if (aValue > bValue) {
+        return 1 * direction;
+      }
+      return 0;
+    });
+  }
+
+  const resetAll = (e) => {
     e.preventDefault();
     setSelectedCategoryId(null);
     setSelectedUserId(null);
     setSearchTerm('');
+    setSortColumn('id');
+    setSortDirection('asc');
+  };
+
+  const getSortIconClass = (column) => {
+    if (sortColumn !== column || sortDirection === 'none') {
+      return 'fas fa-sort';
+    }
+    return sortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
   };
 
   return (
@@ -62,24 +117,17 @@ export const App = () => {
                 data-cy="FilterAllUsers"
                 href="#/"
                 className={selectedUserId === null ? 'is-active' : ''}
-                onClick={e => {
-                  e.preventDefault();
-                  setSelectedUserId(null);
-                }}
+                onClick={(e) => { e.preventDefault(); setSelectedUserId(null); }}
               >
                 All
               </a>
-
               {usersFromServer.map(user => (
                 <a
                   key={user.id}
                   data-cy="FilterUser"
                   href="#/"
                   className={selectedUserId === user.id ? 'is-active' : ''}
-                  onClick={e => {
-                    e.preventDefault();
-                    setSelectedUserId(user.id);
-                  }}
+                  onClick={(e) => { e.preventDefault(); setSelectedUserId(user.id); }}
                 >
                   {user.name}
                 </a>
@@ -94,7 +142,7 @@ export const App = () => {
                   className="input"
                   placeholder="Search"
                   value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
 
                 <span className="icon is-left">
@@ -117,10 +165,7 @@ export const App = () => {
                 href="#/"
                 data-cy="AllCategories"
                 className={`button mr-6 is-outlined ${selectedCategoryId === null ? 'is-success' : ''}`}
-                onClick={e => {
-                  e.preventDefault();
-                  setSelectedCategoryId(null);
-                }}
+                onClick={(e) => { e.preventDefault(); setSelectedCategoryId(null); }}
               >
                 All
               </a>
@@ -131,10 +176,7 @@ export const App = () => {
                   data-cy="Category"
                   className={`button mr-2 my-1 ${selectedCategoryId === category.id ? 'is-info' : ''}`}
                   href="#/"
-                  onClick={e => {
-                    e.preventDefault();
-                    setSelectedCategoryId(category.id);
-                  }}
+                  onClick={(e) => { e.preventDefault(); setSelectedCategoryId(category.id); }}
                 >
                   {category.icon} - {category.title}
                 </a>
@@ -156,22 +198,17 @@ export const App = () => {
 
         <div className="box table-container">
           {visibleProducts.length === 0 ? (
-            <p data-cy="NoMatchingMessage">
-              No products matching selected criteria
-            </p>
+            <p data-cy="NoMatchingMessage">No products matching selected criteria</p>
           ) : (
-            <table
-              data-cy="ProductTable"
-              className="table is-striped is-narrow is-fullwidth"
-            >
+            <table data-cy="ProductTable" className="table is-striped is-narrow is-fullwidth">
               <thead>
                 <tr>
                   <th>
                     <span className="is-flex is-flex-wrap-nowrap">
                       ID
-                      <a href="#/">
+                      <a href="#/" onClick={(e) => { e.preventDefault(); handleSort('id'); }}>
                         <span className="icon">
-                          <i data-cy="SortIcon" className="fas fa-sort" />
+                          <i data-cy="SortIcon" className={getSortIconClass('id')} />
                         </span>
                       </a>
                     </span>
@@ -180,9 +217,9 @@ export const App = () => {
                   <th>
                     <span className="is-flex is-flex-wrap-nowrap">
                       Product
-                      <a href="#/">
+                      <a href="#/" onClick={(e) => { e.preventDefault(); handleSort('name'); }}>
                         <span className="icon">
-                          <i data-cy="SortIcon" className="fas fa-sort-down" />
+                          <i data-cy="SortIcon" className={getSortIconClass('name')} />
                         </span>
                       </a>
                     </span>
@@ -191,9 +228,9 @@ export const App = () => {
                   <th>
                     <span className="is-flex is-flex-wrap-nowrap">
                       Category
-                      <a href="#/">
+                      <a href="#/" onClick={(e) => { e.preventDefault(); handleSort('category'); }}>
                         <span className="icon">
-                          <i data-cy="SortIcon" className="fas fa-sort-up" />
+                          <i data-cy="SortIcon" className={getSortIconClass('category')} />
                         </span>
                       </a>
                     </span>
@@ -202,9 +239,9 @@ export const App = () => {
                   <th>
                     <span className="is-flex is-flex-wrap-nowrap">
                       User
-                      <a href="#/">
+                      <a href="#/" onClick={(e) => { e.preventDefault(); handleSort('user'); }}>
                         <span className="icon">
-                          <i data-cy="SortIcon" className="fas fa-sort" />
+                          <i data-cy="SortIcon" className={getSortIconClass('user')} />
                         </span>
                       </a>
                     </span>
@@ -215,20 +252,12 @@ export const App = () => {
               <tbody>
                 {visibleProducts.map(prod => (
                   <tr key={prod.id} data-cy="Product">
-                    <td className="has-text-weight-bold" data-cy="ProductId">
-                      {prod.id}
-                    </td>
+                    <td className="has-text-weight-bold" data-cy="ProductId">{prod.id}</td>
                     <td data-cy="ProductName">{prod.name}</td>
-                    <td data-cy="ProductCategory">
-                      {prod.category.icon} - {prod.category.title}
-                    </td>
+                    <td data-cy="ProductCategory">{prod.category.icon} - {prod.category.title}</td>
                     <td
                       data-cy="ProductUser"
-                      className={
-                        prod.user.sex === 'm'
-                          ? 'has-text-link'
-                          : 'has-text-danger'
-                      }
+                      className={prod.user.sex === 'm' ? 'has-text-link' : 'has-text-danger'}
                     >
                       {prod.user.name}
                     </td>
